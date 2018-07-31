@@ -6,7 +6,7 @@ const fs = require('fs');
 
 const json = 'https://raw.githubusercontent.com/wakayama-pref-org/wakayama_free_wi-fi/master/json/WAKAYAMAFREEWi-Fi.json';
 const yahoo = `https://map.yahooapis.jp/geocode/V1/geoCoder?appid=${process.env.YAHOO_APP_ID}&output=json`;
-console.log(yahoo)
+
 const validateStr = ( str ) => {
     str = str.replace(/[Ａ-Ｚａ-ｚ０-９]/g, function(s) {
         return String.fromCharCode(s.charCodeAt(0) - 65248);
@@ -38,7 +38,7 @@ http.get(json, (res) => {
         res.forEach(element => {
             if (0 <= element[2].indexOf('東牟婁郡串本町')) {
                 const name = validateStr( element[1] );
-                const address = validateStr( element[2] ) + validateStr( element[3] );
+                const address = '和歌山県' + validateStr( element[2] ) + validateStr( element[3] );
                 http.get(`${yahoo}&query=${encodeURIComponent(address)}`, (res) => {
                     let body = '';
                     res.setEncoding('utf8');
@@ -51,10 +51,10 @@ http.get(json, (res) => {
                         var lat = '';
                         var lng = '';
                         res = JSON.parse(body);
-                        if (res.ResultInfo.Count) {
+                        if (!api[name] && res.ResultInfo.Count) {
                             latlng = res.Feature[0].Geometry.Coordinates.split(',');
-                            lat = latlng[0];
-                            lng = latlng[1];
+                            lat = latlng[1];
+                            lng = latlng[0];
                             api[name] = {
                                 address: res.Feature[0].Property.Address,
                                 lat: lat,
@@ -68,13 +68,9 @@ http.get(json, (res) => {
                             };
                         }
 
-                        fs.writeFile(
-                            `api/v1/api.json`,
-                            JSON.stringify(api),
-                            err => {
-                              if (err) throw err
-                            }
-                        )
+                        fs.writeFile(`api/v1/api.json`, JSON.stringify(api, null, "  "), err => {
+                            if (err) throw err
+                        })
                     });
                 }).on('error', (e) => {
                     console.log(e.message);
